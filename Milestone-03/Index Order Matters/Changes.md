@@ -69,3 +69,5 @@ The order of columns inside a composite index is therefore critical for query op
 ## Result
 
 The corrected index better matches the query filter conditions and allows PostgreSQL to use the index more effectively, resulting in improved query performance.
+
+Abhishek B K
