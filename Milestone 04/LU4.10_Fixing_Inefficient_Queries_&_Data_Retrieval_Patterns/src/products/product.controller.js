@@ -7,7 +7,15 @@ export async function listProducts(req, res) {
     res.json(products);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: 'Internal Server Error' });
+    if (err.message.startsWith("Invalid")) {
+  return res.status(400).json({
+    error: err.message,
+  });
+}
+
+res.status(500).json({
+  error: "Internal Server Error",
+});
   }
 }
 
