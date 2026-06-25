@@ -5,7 +5,9 @@ const db = require('../db');
 // GET all transactions in the system
 router.get('/', async (req, res) => {
   try {
-    const { rows } = await db.query('SELECT * FROM transactions');
+    const { rows } = await db.query(
+  'SELECT * FROM transactions WHERE deleted_at IS NULL'
+);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: 'Database execution error' });
@@ -15,7 +17,10 @@ router.get('/', async (req, res) => {
 // GET transactions by account_id
 router.get('/account/:accountId', async (req, res) => {
   try {
-    const { rows } = await db.query('SELECT * FROM transactions WHERE account_id = $1', [req.params.accountId]);
+    const { rows } = await db.query(
+  'SELECT * FROM transactions WHERE account_id = $1 AND deleted_at IS NULL',
+  [req.params.accountId]
+);
     res.json(rows);
   } catch (err) {
     res.status(500).json({ error: 'Database retrieval error' });
@@ -40,15 +45,30 @@ router.post('/', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     // Hard DELETE from transactions table
-    const { rowCount } = await db.query('DELETE FROM transactions WHERE id = $1', [req.params.id]);
+    const { rowCount } = await db.query(
+  'UPDATE transactions SET deleted_at = NOW() WHERE id = $1 AND deleted_at IS NULL',
+  [req.params.id]
+);
     
     if (rowCount === 0) {
       return res.status(404).json({ error: 'Transaction ID not found' });
     }
     
-    res.json({ message: 'Transaction record permanently erased from LedgerApp' });
+    res.json({ message: 'Transaction soft deleted successfully' });
   } catch (err) {
     res.status(500).json({ error: 'Delete operation failed' });
+  }
+});
+
+// GET all soft-deleted transactions (Admin)
+router.get('/deleted', async (req, res) => {
+  try {
+    const { rows } = await db.query(
+      'SELECT * FROM transactions WHERE deleted_at IS NOT NULL'
+    );
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Database retrieval error' });
   }
 });
 
