@@ -44,15 +44,11 @@ model Booking {
   userId    Int
   seatId    Int
   showId    Int
-
-  user      User     @relation(fields: [userId], references: [id])
-  seat      Seat     @relation(fields: [seatId], references: [id])
-  show      Show     @relation(fields: [showId], references: [id])
-
   createdAt DateTime @default(now())
 
-  // ❌ FLAW 2: No @@unique constraint here.
-  // Two concurrent inserts for the same (seatId, showId) will both succeed.
-  // The database has no way to reject the second one.
-  // Add @@unique([seatId, showId]) to fix this.
+  user User @relation(fields: [userId], references: [id])
+  seat Seat @relation(fields: [seatId], references: [id])
+  show Show @relation(fields: [showId], references: [id])
+
+  @@unique([seatId, showId])
 }
