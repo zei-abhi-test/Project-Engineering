@@ -9,60 +9,73 @@ app.use(cors());
 app.use(express.json());
 
 
-const cache = new Map();
+const cache = require("./services/cacheService");
 
 // GET /tasks
-app.get('/tasks', async (req, res) => {
+app.get("/tasks", async (req, res) => {
   try {
-    // BUG 2: Global cache key logic (Used for EVERYTHING)
-    const cacheKey = 'global_data_key';
-    
-    if (cache.has(cacheKey)) {
-      console.log('Serving from cache');
-      const cachedResult = cache.get(cacheKey);
-      // BUG 4: Missing await simulation -> If store promise, wait for it here
-      // But let's say the student forgets to even wait for it here or the code fails
-      return res.status(200).json(cachedResult);
+    const cacheKey = "tasks:list";
+
+    const cached = cache.get(cacheKey);
+
+    if (cached) {
+      return res.status(200).json(cached);
     }
 
-    // BUG 4: Missing await (Promise stored in cache)
-    const tasksPromise = prisma.task.findMany();
-    cache.set(cacheKey, tasksPromise); 
-    
-    const tasks = await tasksPromise;
+    const tasks = await prisma.task.findMany();
+
+    cache.set(cacheKey, tasks, 60);
+
     res.status(200).json(tasks);
+
   } catch (err) {
-    // BUG 8: Errors swallowed
-    console.log('Error fetching tasks', err);
+    console.error(err);
+    res.status(500).json({
+      error: "Internal Server Error"
+    });
   }
 });
 
 // GET /tasks/:id
-app.get('/tasks/:id', async (req, res) => {
-  const { id } = req.params;
-  const cacheKey = `task_${id}`;
+app.get("/tasks/:id", async (req, res) => {
+
+  const id = Number(req.params.id);
+
+  const cacheKey = `task:${id}`;
 
   try {
-    if (cache.has(cacheKey)) {
-      // BUG 5: Null values cached permanently
-      // If we cached null, we just return it
-      return res.status(200).json(cache.get(cacheKey));
+
+    const cached = cache.get(cacheKey);
+
+    if (cached) {
+      return res.json(cached);
     }
 
     const task = await prisma.task.findUnique({
-      where: { id: parseInt(id) }
+      where: { id }
     });
 
-    // BUG 5: Cached even if null
-    cache.set(cacheKey, task);
-    
-    // BUG 6: Wrong status codes (200 everywhere)
-    res.status(200).json(task);
-  } catch (err) {
-    console.log('Error fetching task', err);
-  }
-});
+    if (!task) {
+      return res.status(404).json({
+        error: "Task not found"
+      });
+    }
 
+    cache.set(cacheKey, task, 60);
+
+    res.json(task);
+
+  } catch (err) {
+
+    console.error(err);
+
+    res.status(500).json({
+      error: "Internal Server Error"
+    });
+
+  }
+
+});
 // POST /tasks
 app.post('/tasks', async (req, res) => {
   const { title, description, price } = req.body;
@@ -70,15 +83,18 @@ app.post('/tasks', async (req, res) => {
     const newTask = await prisma.task.create({
       data: { title, description, price: parseFloat(price) }
     });
-
+    cache.del("tasks:list");
     // BUG 4: Missing await simulation - storing a promise
     // Wait, if I use the return value it's fine. 
     // Let's just create a messy caching logic here too
     // Note: No invalidation of the 'all_tasks_data' key here
     
     // BUG 6: Wrong status code (should be 201)
-    res.status(200).json(newTask);
+    res.status(201).json(newTask);
   } catch (err) {
+    res.status(500).json({
+  error: "Internal Server Error"
+});
     console.log('Error creating task', err);
   }
 });
@@ -90,12 +106,15 @@ app.delete('/tasks/:id', async (req, res) => {
     await prisma.task.delete({
       where: { id: parseInt(id) }
     });
-
+    cache.del("tasks:list");
+    cache.del(`task:${id}`);
     // BUG 1: Cache NOT invalidated after delete!
     // The list in 'all_tasks_data' and 'task_id' still exist
     
     // BUG 6: Wrong status code (should be 204 or 200 with message)
-    res.status(200).json({ message: 'Deleted' });
+    res.status(200).json({
+  message: "Task deleted successfully"
+});
   } catch (err) {
     console.log('Error deleting task', err);
   }
