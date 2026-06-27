@@ -71,51 +71,115 @@ function EmptyState() {
   return (
     <tr>
       <td colSpan={6}>
-        <div style={{ padding: '80px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
-          {/* TODO: Make this look good! Add an icon, a clear heading, and a helpful message */}
-          <div style={{ fontSize: 48 }}>📭</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>No orders yet</div>
-          <div style={{ color: 'var(--text-secondary)', maxWidth: 320, lineHeight: 1.6 }}>
-            {/* TODO: Write a helpful message for the user */}
-            Write a helpful message here explaining why there are no orders
-            and what the user can do next.
+        <div
+          style={{
+            padding: "80px 32px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 16,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 50 }}>📦</div>
+
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+            }}
+          >
+            No Orders Found
           </div>
-          {/* TODO: Add a CTA button — e.g. "Create your first order" */}
+
+          <div
+            style={{
+              color: "var(--text-secondary)",
+              maxWidth: 420,
+              lineHeight: 1.6,
+            }}
+          >
+            There are currently no orders to display. New customer orders
+            will automatically appear here once they are created.
+          </div>
+
+          <button
+            style={{
+              marginTop: 10,
+              padding: "10px 24px",
+              background: "var(--accent)",
+              border: "none",
+              borderRadius: "var(--radius)",
+              color: "#000",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            ➕ Create First Order
+          </button>
         </div>
       </td>
     </tr>
-  )
+  );
 }
 
 function ErrorState({ message, onRetry }) {
   return (
     <tr>
       <td colSpan={6}>
-        <div style={{ padding: '80px 32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, textAlign: 'center' }}>
-          {/* TODO: Make this look good! Add an error icon, clear heading, and the error message */}
-          <div style={{ fontSize: 48 }}>⚠️</div>
-          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>Something went wrong</div>
-          <div style={{ color: 'var(--text-secondary)', maxWidth: 340, fontSize: 14, fontFamily: 'var(--mono)' }}>
-            {/* TODO: Display the actual error message here */}
-            Error message goes here
+        <div
+          style={{
+            padding: "80px 32px",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 16,
+            textAlign: "center",
+          }}
+        >
+          <div style={{ fontSize: 50 }}>⚠️</div>
+
+          <div
+            style={{
+              fontSize: 22,
+              fontWeight: 700,
+              color: "var(--text-primary)",
+            }}
+          >
+            Failed to Load Orders
           </div>
-          {/* TODO: Implement the Retry button — call onRetry when clicked */}
-          <button onClick={onRetry} style={{
-            marginTop: 8,
-            padding: '10px 24px',
-            background: 'transparent',
-            border: '1px solid var(--border)',
-            borderRadius: 'var(--radius)',
-            color: 'var(--text-primary)',
-            fontSize: 14, fontWeight: 500, cursor: 'pointer',
-          }}>
-            {/* TODO: Add a retry icon and label */}
-            Retry
+
+          <div
+            style={{
+              color: "var(--red)",
+              maxWidth: 420,
+              lineHeight: 1.6,
+              fontFamily: "var(--mono)",
+            }}
+          >
+            {message}
+          </div>
+
+          <button
+            onClick={onRetry}
+            style={{
+              marginTop: 8,
+              padding: "10px 24px",
+              background: "var(--accent)",
+              color: "#000",
+              border: "none",
+              borderRadius: "var(--radius)",
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            🔄 Retry
           </button>
         </div>
       </td>
     </tr>
-  )
+  );
 }
 
 //Main Dashboard Component
@@ -214,33 +278,23 @@ export default function OrdersDashboard() {
               </tr>
             </thead>
             <tbody>
-
-              {/* 
-               *  YOUR WORK STARTS HERE
-               *
-               *  Currently this just dumps raw JSON. Replace the
-               *  block below with proper conditional rendering
-               *  for all 4 UX states.
-               * ═══════════════════════════════════════════════ */}
-
-              {/* 🔴 PLACEHOLDER — DELETE THIS ENTIRE BLOCK AND REPLACE IT */}
-              <tr>
-                <td colSpan={6} style={{ padding: 32 }}>
-                  <div style={{ background: 'var(--surface-2)', border: '1px dashed var(--border)', borderRadius: 8, padding: 24 }}>
-                    <p style={{ color: 'var(--accent)', fontWeight: 600, marginBottom: 8, fontFamily: 'var(--mono)', fontSize: 13 }}>
-                      🚧 TODO: Implement the 4 UX states here
-                    </p>
-                    <p style={{ color: 'var(--text-muted)', fontSize: 13, marginBottom: 12 }}>
-                      Current raw data dump (replace with proper UI):
-                    </p>
-                    <pre style={{ color: 'var(--text-secondary)', fontSize: 11, fontFamily: 'var(--mono)', lineHeight: 1.6, overflowX: 'auto' }}>
-                      {JSON.stringify({ loading, error, ordersCount: orders.length }, null, 2)}
-                    </pre>
-                  </div>
-                </td>
-              </tr>
-              {/* 🔴 END OF PLACEHOLDER */}
-
+              {loading ? (
+                [...Array(6)].map((_, i) => <SkeletonRow key={i} />)
+              ) : error ? (
+                <ErrorState
+                  message={error}
+                  onRetry={loadOrders}
+                />
+              ) : orders.length === 0 ? (
+                <EmptyState />
+              ) : (
+                orders.map((order) => (
+                  <OrderRow
+                    key={order.id}
+                    order={order}
+                  />
+                ))
+              )}
             </tbody>
           </table>
         </div>
