@@ -1,11 +1,39 @@
 import React from 'react';
 import { useCustomers } from '../hooks/useCustomers';
 import CustomerRow from '../components/CustomerRow';
+import {
+  SkeletonCard,
+  ErrorMessage,
+  EmptyState,
+} from "../components/states";
 
 const Customers = () => {
-    const { data: customers, isLoading, error } = useCustomers();
+    // Added refetch to the hook destructuring to match the actions required by the guards
+    const { data: customers, isLoading, error, refetch } = useCustomers();
 
-    // DELIBERATE GAP: Nothing here for loading, error, or empty data records.
+    if (isLoading) {
+      return <SkeletonCard count={5} />;
+    }
+
+    if (error) {
+      return (
+        <ErrorMessage
+          message="We couldn't load your customers. Please refresh the page."
+          onRetry={refetch}
+        />
+      );
+    }
+
+    if (!customers || customers.length === 0) {
+      return (
+        <EmptyState
+          title="No customers found"
+          message="Customers will appear here after registration."
+          actionLabel="Refresh"
+          onAction={refetch}
+        />
+      );
+    }
 
     return (
         <div className="p-8">
@@ -21,7 +49,7 @@ const Customers = () => {
                         </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-100">
-                        {customers && customers.map(customer => (
+                        {customers.map(customer => (
                             <CustomerRow key={customer.id} customer={customer} />
                         ))}
                     </tbody>
