@@ -1,47 +1,69 @@
-import { createContext, useState } from 'react'
+import { createContext, useState, useEffect, useContext } from 'react';
 
-export const AuthContext = createContext(null)
+// 1. Create the context
+export const AuthContext = createContext(null);
 
 /**
  * AuthProvider provides the authentication state to the application.
- * Note: Submitting multiple bugs here for the student to find.
  */
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [token, setToken] = useState(null)
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
 
-  // BUG 2: Login handles state but fails to persist the session to localStorage
+  // Load user session from localStorage on component mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem("authToken");
+    const storedUser = localStorage.getItem("authUser");
+
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser));
+      } catch (error) {
+        console.error("Failed to parse stored user data:", error);
+        // Clear corrupt storage
+        localStorage.removeItem("authToken");
+        localStorage.removeItem("authUser");
+      }
+    }
+  }, []);
+
+  // Login handles state and persists the session to localStorage
   const login = (userData, fakeToken) => {
-    setUser(userData)
-    setToken(fakeToken)
-    
-    // ❌ Missing: localStorage.setItem('authToken', fakeToken)
-    // ❌ Missing: localStorage.setItem('authUser', JSON.stringify(userData))
-    console.log('✅ User logged in:', userData.email)
-  }
+    setUser(userData);
+    setToken(fakeToken);
+    localStorage.setItem("authToken", fakeToken);
+    localStorage.setItem("authUser", JSON.stringify(userData));
+  };
 
-  // BUG 3 (Part 2): Logout clears state but may leave data in storage or has issues
+  // Logout clears state and removes data from storage completely
   const logout = () => {
-    setUser(null)
-    setToken(null)
-    // ❌ Missing: localStorage.removeItem('authToken')
-    // ❌ Missing: localStorage.removeItem('authUser')
-    console.log('🚪 User logged out')
-  }
-
-  // BUG 2 (Part 2): Missing useEffect to load user from localStorage on mount
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("authToken");
+    localStorage.removeItem("authUser");
+  };
 
   const value = {
     user,
     token,
-    isAuthenticated: !!token, // Derived state for Bug 3
+    isAuthenticated: !!token, 
     login,
     logout
-  }
+  };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
-  )
-}
+  );
+};
+
+// FIX: Added the missing custom hook export that Navbar.jsx requires!
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error("useAuth must be used within an AuthProvider");
+  }
+  return context;
+};
