@@ -1,12 +1,39 @@
 import React from 'react';
 import { useOrders } from '../hooks/useOrders';
 import OrderCard from '../components/OrderCard';
+import {
+  SkeletonCard,
+  ErrorMessage,
+  EmptyState,
+} from "../components/states";
 
 const Orders = () => {
-  const { data: orders, isLoading, error } = useOrders();
+  // Added refetch to the hook destructuring to support the retry/refresh actions
+  const { data: orders, isLoading, error, refetch } = useOrders();
 
-  // DELIBERATE GAP: isLoading and error are ignored.
-  // No check for orders.length === 0.
+  if (isLoading) {
+    return <SkeletonCard count={4} />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage
+        message="We couldn't load your orders. Check your connection and try again."
+        onRetry={refetch}
+      />
+    );
+  }
+
+  if (!orders || orders.length === 0) {
+    return (
+      <EmptyState
+        title="No orders yet"
+        message="Orders will appear here after customers place them."
+        actionLabel="Refresh"
+        onAction={refetch}
+      />
+    );
+  }
 
   return (
     <div className="p-8">
@@ -18,7 +45,7 @@ const Orders = () => {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {orders && orders.map(order => (
+        {orders.map(order => (
           <OrderCard key={order.id} order={order} />
         ))}
       </div>

@@ -1,11 +1,39 @@
 import React from 'react';
 import { useProducts } from '../hooks/useProducts';
 import ProductCard from '../components/ProductCard';
+import {
+  SkeletonCard,
+  ErrorMessage,
+  EmptyState,
+} from "../components/states";
 
 const Products = () => {
-  const { data: products, isLoading, error } = useProducts();
+  // Added refetch to the hook destructuring to match the actions required by the guards
+  const { data: products, isLoading, error, refetch } = useProducts();
 
-  // DELIBERATE GAP: No handling for isLoading, error, or empty data list.
+  if (isLoading) {
+    return <SkeletonCard count={6} />;
+  }
+
+  if (error) {
+    return (
+      <ErrorMessage
+        message="We couldn't load your products. Please try again."
+        onRetry={refetch}
+      />
+    );
+  }
+
+  if (!products || products.length === 0) {
+    return (
+      <EmptyState
+        title="No products found"
+        message="Start by adding your first product."
+        actionLabel="Refresh"
+        onAction={refetch}
+      />
+    );
+  }
 
   return (
     <div className="p-8">
@@ -22,7 +50,7 @@ const Products = () => {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {products && products.map(product => (
+        {products.map(product => (
           <ProductCard key={product.id} product={product} />
         ))}
       </div>
