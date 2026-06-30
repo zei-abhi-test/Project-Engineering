@@ -1,12 +1,10 @@
-// 🚨 BROKEN: This component is doing WAY too much.
-// It mixes UI, data fetching, error handling all in one place.
-// As a new dev joining this team, your job is to clean this up!
-
 import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
-
-// ❌ BAD: API URL hardcoded at the top — what if it changes?
-const BASE_URL = 'https://fakestoreapi.com'
+import {
+  getProducts,
+  getCategories,
+  getCategoryProducts,
+} from "../services/api";
 
 const enrich = (p) => ({
   ...p,
@@ -26,41 +24,53 @@ export default function ProductsPage() {
   const [categories, setCategories] = useState([])
   const [selectedCategory, setSelectedCategory] = useState('all')
 
-  // ❌ BAD: Raw fetch with no interceptors, no token injection, inconsistent error handling
+  // 7.2 & 7.4 Fetch Products or Filtered Category Products
   useEffect(() => {
-    setLoading(true)
-    fetch('https://fakestoreapi.com/products') // hardcoded again!
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load products')
-        return res.json()
-      })
-      .then(data => {
+    async function fetchProductsData() {
+      try {
+        setLoading(true)
+        let data;
+        
+        if (selectedCategory === 'all') {
+          const response = await getProducts();
+          data = response.data;
+        } else {
+          const response = await getCategoryProducts(selectedCategory);
+          data = response.data;
+        }
+
         setProducts(data.map(enrich))
         setLoading(false)
-      })
-      .catch(err => {
-        setError(err.message) // no global error handler — each component reinvents the wheel
+      } catch (err) {
+        setError(err.message || 'Failed to load products')
         setLoading(false)
-      })
-  }, [])
+      }
+    }
+    
+    fetchProductsData()
+  }, [selectedCategory])
 
-  // ❌ BAD: Second separate fetch — duplicated pattern, no code sharing
+  // 7.3 Fetch Categories
   useEffect(() => {
-    fetch('https://fakestoreapi.com/products/categories') // another hardcoded URL
-      .then(res => res.json()) // not even checking res.ok!
-      .then(data => setCategories(['all', ...data]))
-      .catch(err => console.error('Failed to load categories:', err)) // silently failing!
+    async function fetchCategoriesData() {
+      try {
+        const response = await getCategories();
+        const categoriesData = response.data;
+        setCategories(['all', ...categoriesData])
+      } catch (err) {
+        console.error('Failed to load categories:', err)
+      }
+    }
+
+    fetchCategoriesData()
   }, [])
 
-  // ❌ BAD: Token grabbed manually every time, copy-pasted pattern
   const handleAddToCart = (product) => {
-    const token = localStorage.getItem('auth_token')
-
-    fetch('https://fakestoreapi.com/carts', { // URL #3 hardcoded
+    // 7.5 Removed localStorage.getItem("auth_token") - Handled by interceptor now.
+    fetch('https://fakestoreapi.com', { 
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`, // repeated in every component
       },
       body: JSON.stringify({
         userId: 1,
@@ -75,17 +85,17 @@ export default function ProductsPage() {
         setTimeout(() => setCartMsg(''), 3000)
       })
       .catch(err => {
-        // ❌ No global 401 handling — user just sees a broken UI
         console.error('Cart error:', err)
         setCartMsg('Failed to add to cart')
         setTimeout(() => setCartMsg(''), 3000)
       })
   }
 
-  const filtered = products
-    .filter(p => p.title.toLowerCase().includes(searchTerm.toLowerCase()))
-    .filter(p => selectedCategory === 'all' || p.category === selectedCategory)
+  const filtered = products.filter(p => 
+    p.title.toLowerCase().includes(searchTerm.toLowerCase())
+  )
 
+  // 7.6 UI markup, spinners, and errors left unchanged
   if (loading) return (
     <div className="flex justify-center py-20">
       <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin" />

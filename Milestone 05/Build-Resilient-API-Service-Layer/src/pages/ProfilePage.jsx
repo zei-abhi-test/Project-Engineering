@@ -1,6 +1,5 @@
-// 🚨 BROKEN: Profile page — same mess but now with form submission too.
-
 import { useState, useEffect } from 'react'
+import { getUser, updateUser } from "../services/api"
 
 export default function ProfilePage() {
   const [user, setUser] = useState(null)
@@ -10,56 +9,52 @@ export default function ProfilePage() {
   const [saveMsg, setSaveMsg] = useState('')
   const [form, setForm] = useState({ email: '', username: '', phone: '' })
 
-  // ❌ BAD: 6th hardcoded URL in the project!
   useEffect(() => {
-    fetch(`https://fakestoreapi.com/users/1`)
-      .then(res => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`)
-        return res.json()
-      })
-      .then(data => {
+    async function fetchUserData() {
+      try {
+        setLoading(true)
+        // Step 11: Replaced raw fetch with getUser() service method
+        const response = await getUser();
+        const data = response.data;
+
         setUser(data)
         setForm({ email: data.email || '', username: data.username || '', phone: data.phone || '' })
         setLoading(false)
-      })
-      .catch(err => {
-        // ❌ No shared error handling — each component writes its own version
-        if (err.message.includes('401')) {
+      } catch (err) {
+        if (err.message?.includes('401')) {
           setError('You need to log in')
         } else {
-          setError('Could not load profile: ' + err.message)
+          setError('Could not load profile: ' + (err.message || ''))
         }
         setLoading(false)
-      })
+      }
+    }
+
+    fetchUserData()
   }, [])
 
   const handleSave = async (e) => {
     e.preventDefault()
     setSaving(true)
-    const token = localStorage.getItem('auth_token') // AGAIN — 4th time in this codebase!
+    // Step 11: Removed localStorage token retrieval and replaced fetch with updateUser(form)
     try {
-      const res = await fetch(`https://fakestoreapi.com/users/1`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-        body: JSON.stringify(form),
-      })
-      if (res.status === 401) {
-        // ❌ Manual 401 check — should be a global interceptor!
-        setError('Session expired. Please log in again.')
-        setSaving(false)
-        return
-      }
-      if (!res.ok) throw new Error('Failed to update profile')
-      const updated = await res.json()
+      const response = await updateUser(form);
+      const updated = response.data || response;
+      
       setUser(updated)
       setSaveMsg('Profile saved!')
       setTimeout(() => setSaveMsg(''), 3000)
     } catch (err) {
-      setSaveMsg('Save failed: ' + err.message)
+      if (err.message?.includes('401')) {
+        setError('Session expired. Please log in again.')
+      } else {
+        setSaveMsg('Save failed: ' + err.message)
+      }
     }
     setSaving(false)
   }
 
+  // UI layout and structure left untouched to preserve complete application behavior
   if (loading) return (
     <div className="flex justify-center py-20">
       <div className="w-6 h-6 border-2 border-gray-300 border-t-gray-800 rounded-full animate-spin" />

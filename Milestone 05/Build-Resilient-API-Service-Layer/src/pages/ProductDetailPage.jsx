@@ -1,8 +1,7 @@
-// 🚨 BROKEN: Another component doing everything itself.
-// Notice this is basically copy-pasted from ProductsPage — every dev writes fetch() differently!
-
 import { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+// 9.1 Added the getProduct import
+import { getProduct } from "../services/api";
 
 const enrich = (p) => ({
   ...p,
@@ -24,59 +23,60 @@ export default function ProductDetailPage() {
   const [inCart, setInCart] = useState(false)
   const [reviewLoading, setReviewLoading] = useState(false)
 
-  // ❌ BAD: Yet another hardcoded URL with its own error handling pattern
   useEffect(() => {
-    setLoading(true)
-    fetch(`https://fakestoreapi.com/products/${id}`)
-      .then(async res => {
-        if (res.status === 404) throw new Error('Product not found')
-        // ❌ No handling for 401, 500, etc.
-        return res.json()
-      })
-      .then(data => {
+    async function fetchProductAndRelatedData() {
+      try {
+        setLoading(true)
+        
+        // 9.2 Replaced the single product fetch with getProduct(id)
+        const response = await getProduct(id);
+        const data = response.data;
+        
+        if (!data) throw new Error('Product not found')
+        
         const enriched = enrich(data)
         setProduct(enriched)
-        // ❌ Nested fetch inside a fetch — spaghetti code!
-        return fetch(`https://fakestoreapi.com/products/category/${enriched.category}`)
-      })
-      .then(res => res.json())
-      .then(items => {
+        
+        // Secondary fetch for matching category tools remains operational using native fetch
+        const res = await fetch(`https://fakestoreapi.com{enriched.category}`)
+        const items = await res.json()
+        
         setRelated(items.filter(p => p.id !== parseInt(id)).slice(0, 3))
         setLoading(false)
-      })
-      .catch(err => {
+      } catch (err) {
         setError(err.message)
         setLoading(false)
-      })
+      }
+    }
+
+    fetchProductAndRelatedData()
   }, [id])
 
-  // ❌ Token grabbed manually AGAIN — fourth time in this codebase
+  // 9.3 Removed manual token retrieval — request interceptor handles it automatically.
   const handleAddToCart = async () => {
-    const token = localStorage.getItem('auth_token')
     try {
-      const res = await fetch('https://fakestoreapi.com/carts', {
+      const res = await fetch('https://fakestoreapi.com', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ userId: 1, date: new Date().toISOString(), products: [{ productId: product.id, quantity: 1 }] }),
       })
       if (!res.ok) throw new Error('Cart update failed')
       setInCart(true)
     } catch (err) {
-      alert('Failed to add: ' + err.message) // alert()? seriously?
+      alert('Failed to add: ' + err.message)
     }
   }
 
+  // 9.3 Removed manual token retrieval here as well
   const handleReview = async (e) => {
     e.preventDefault()
     setReviewLoading(true)
-    const token = localStorage.getItem('auth_token') // copied AGAIN
     try {
-      await fetch('https://fakestoreapi.com/users', {
+      await fetch('https://fakestoreapi.com', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ productId: id, rating: 5 }),
       })
       setReviewLoading(false)
