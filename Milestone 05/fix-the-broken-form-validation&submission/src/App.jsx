@@ -1,7 +1,5 @@
 // ============================================================
-//  TrackFlow – Bug Report Form  (BROKEN VERSION)
-//  Your task: Find and fix all the bugs in this file.
-//  Do NOT modify api.js or index.css.
+//  TrackFlow – Bug Report Form  (FIXED VERSION)
 // ============================================================
 
 import { useState } from 'react'
@@ -10,69 +8,86 @@ import { submitBugReport } from './api'
 const SEVERITIES = ['Critical', 'High', 'Medium', 'Low']
 const COMPONENTS = ['Authentication', 'Dashboard', 'Billing', 'API', 'Notifications', 'Settings']
 
-// ---- BUG TRACKER -----------------------------------------------
-// Below are intentionally broken behaviours. Find and fix them all.
-// BUG 1: Form submits even when required fields are empty
-// BUG 2: No loading state — button stays active during API call
-//         (users can click Submit multiple times)
-// BUG 3: After successful submission the form is NOT cleared
-// BUG 4: Server-side errors (from api.js) are silently swallowed
-// BUG 5: No per-field validation messages are shown to the user
-// BUG 6: "Steps to Reproduce" accepts any number, including 0 and negatives
-// ----------------------------------------------------------------
-
 export default function App() {
-  const [form, setForm] = useState({
+  const initialFormState = {
     title: '',
     severity: '',
     component: '',
     description: '',
     steps: '',
     stepsCount: '',
-  })
+  }
 
-  // BUG: errors state is declared but never populated or displayed
+  const [form, setForm] = useState(initialFormState)
   const [errors, setErrors] = useState({})
-
-  // BUG: loading and serverError exist but are never used in JSX
   const [loading, setLoading] = useState(false)
   const [serverError, setServerError] = useState(null)
-
   const [submitted, setSubmitted] = useState([])
   const [successId, setSuccessId] = useState(null)
 
   const handleChange = (e) => {
     const { name, value } = e.target
     setForm((f) => ({ ...f, [name]: value }))
-    // BUG: errors are never cleared when user starts fixing a field
+    
+    // BUG 5 FIXED: Clear individual field error as user types
+    if (errors[name]) {
+      setErrors((prev) => {
+        const next = { ...prev }
+        delete next[name]
+        return next
+      })
+    }
   }
 
-  // BUG: validate() always returns true — no real checks happen
+  // BUG 1 & 6 FIXED: Added actual validation logic for required and numeric fields
   const validate = () => {
-    return true
+    const tempErrors = {}
+    if (!form.title.trim()) tempErrors.title = 'Bug title is required.'
+    if (!form.severity) tempErrors.severity = 'Please select a severity level.'
+    if (!form.component) tempErrors.component = 'Please select an affected component.'
+    if (!form.description.trim()) tempErrors.description = 'Description is required.'
+    
+    // Validate stepsCount is a number strictly greater than 0
+    const count = parseInt(form.stepsCount, 10)
+    if (!form.stepsCount || isNaN(count) || count <= 0) {
+      tempErrors.stepsCount = 'Number of steps must be 1 or greater.'
+    }
+
+    setErrors(tempErrors)
+    return Object.keys(tempErrors).length === 0
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    setServerError(null)
+    setSuccessId(null)
 
-    // BUG: validate() result is ignored; submission always continues
-    validate()
+    // BUG 1 FIXED: Block submission if validation fails
+    if (!validate()) return
 
-    // BUG: loading is never set to true before the API call
+    // BUG 2 FIXED: Initiate loading state
+    setLoading(true)
+
     try {
       const result = await submitBugReport(form)
       setSuccessId(result.id)
       setSubmitted((prev) => [result, ...prev])
-      // BUG: form state is never reset after success
+      // BUG 3 FIXED: Clear form upon successful submission
+      setForm(initialFormState)
     } catch (err) {
-      // BUG: server error is caught but nothing is shown to the user
+      // BUG 4 FIXED: Capture and display server-side errors
+      setServerError(err?.message || 'A network error occurred. Please try again.')
     } finally {
-      // BUG: loading is never set back to false
+      // BUG 2 FIXED: Turn off loading state
+      setLoading(false)
     }
   }
 
   const sevClass = (s) =>
     ({ Critical: 'sev-critical', High: 'sev-high', Medium: 'sev-medium', Low: 'sev-low' }[s] ?? '')
+
+  // Inline style block for field errors
+  const errorStyle = { color: '#f75f5f', fontSize: '12px', marginTop: '4px', display: 'block' }
 
   return (
     <div className="app-wrapper">
@@ -90,17 +105,17 @@ export default function App() {
         <p className="section-label">New Bug Report</p>
         <form onSubmit={handleSubmit} noValidate>
 
-          {/* SUCCESS BANNER — shown after a successful submit */}
+          {/* SUCCESS BANNER */}
           {successId && (
             <div style={{ background: 'rgba(76,175,125,0.1)', border: '1px solid rgba(76,175,125,0.3)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: '#4caf7d' }}>
               ✓ Bug <strong>{successId}</strong> filed successfully!
             </div>
           )}
 
-          {/* SERVER ERROR BANNER — BUG: serverError is never set, so this never shows */}
+          {/* SERVER ERROR BANNER — BUG 4 FIXED */}
           {serverError && (
             <div style={{ background: 'rgba(247,95,95,0.1)', border: '1px solid rgba(247,95,95,0.3)', borderRadius: 8, padding: '12px 16px', marginBottom: 20, fontSize: 14, color: '#f75f5f' }}>
-              {serverError}
+              ✕ Error: {serverError}
             </div>
           )}
 
@@ -111,26 +126,40 @@ export default function App() {
               value={form.title}
               onChange={handleChange}
               placeholder="e.g. Checkout button unresponsive on mobile Safari"
+              style={errors.title ? { borderColor: '#f75f5f' } : {}}
             />
-            {/* BUG: error message for title is never rendered */}
+            {/* BUG 5 FIXED */}
+            {errors.title && <span style={errorStyle}>{errors.title}</span>}
           </div>
 
           <div className="form-row">
             <div className="form-group">
               <label>Severity <span className="req">*</span></label>
-              <select name="severity" value={form.severity} onChange={handleChange}>
+              <select 
+                name="severity" 
+                value={form.severity} 
+                onChange={handleChange}
+                style={errors.severity ? { borderColor: '#f75f5f' } : {}}
+              >
                 <option value="">— Select —</option>
                 {SEVERITIES.map((s) => <option key={s}>{s}</option>)}
               </select>
-              {/* BUG: error message for severity is never rendered */}
+              {/* BUG 5 FIXED */}
+              {errors.severity && <span style={errorStyle}>{errors.severity}</span>}
             </div>
             <div className="form-group">
               <label>Affected Component <span className="req">*</span></label>
-              <select name="component" value={form.component} onChange={handleChange}>
+              <select 
+                name="component" 
+                value={form.component} 
+                onChange={handleChange}
+                style={errors.component ? { borderColor: '#f75f5f' } : {}}
+              >
                 <option value="">— Select —</option>
                 {COMPONENTS.map((c) => <option key={c}>{c}</option>)}
               </select>
-              {/* BUG: error message for component is never rendered */}
+              {/* BUG 5 FIXED */}
+              {errors.component && <span style={errorStyle}>{errors.component}</span>}
             </div>
           </div>
 
@@ -141,8 +170,10 @@ export default function App() {
               value={form.description}
               onChange={handleChange}
               placeholder="Describe what's happening and what the expected behaviour should be…"
+              style={errors.description ? { borderColor: '#f75f5f' } : {}}
             />
-            {/* BUG: error message for description is never rendered */}
+            {/* BUG 5 FIXED */}
+            {errors.description && <span style={errorStyle}>{errors.description}</span>}
           </div>
 
           <hr className="divider" />
@@ -166,14 +197,16 @@ export default function App() {
                 value={form.stepsCount}
                 onChange={handleChange}
                 placeholder="e.g. 3"
+                style={errors.stepsCount ? { borderColor: '#f75f5f' } : {}}
               />
-              {/* BUG: accepts 0, negatives, and empty — no validation */}
+              {/* BUG 5 & 6 FIXED */}
+              {errors.stepsCount && <span style={errorStyle}>{errors.stepsCount}</span>}
             </div>
           </div>
 
-          {/* BUG: button is never disabled during loading, no spinner shown */}
-          <button type="submit" className="btn btn-primary">
-            Submit Bug Report
+          {/* BUG 2 FIXED: Button disables during submission and changes text context */}
+          <button type="submit" className="btn btn-primary" disabled={loading}>
+            {loading ? 'Submitting...' : 'Submit Bug Report'}
           </button>
 
         </form>
