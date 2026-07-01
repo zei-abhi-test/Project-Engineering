@@ -1,3 +1,3 @@
 export { default as SkeletonCard } from "./SkeletonCard";
-export { default as ErrorMessage } from "./ErrorMessage";
-export { default as EmptyState } from "./EmptyState";
+export { default as ErrorMessage } from "./components/ErrorMessage";
+export { default as EmptyState } from "./components/EmptyState";
