@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import ErrorMessage from "../ErrorMessage";
+import ErrorMessage from "../components/ErrorMessage";
 
 describe("ErrorMessage", () => {
   describe("happy path", () => {
