@@ -1,0 +1,26 @@
+config:
+  target: "http://localhost:3001"
+
+  phases:
+    - duration: 30
+      arrivalRate: 50
+      rampTo: 50
+      name: "Ramp up to 50 users"
+
+scenarios:
+  - name: "Get all quotes (unpaginated)"
+    flow:
+      - get:
+          url: "/api/quotes/unpaginated"
+
+  - name: "Get paginated quotes"
+    flow:
+      - get:
+          url: "/api/quotes?page=1&limit=20"
+
+  - name: "Add favorite"
+    flow:
+      - post:
+          url: "/api/favorites"
+          json:
+            quoteId: 1
