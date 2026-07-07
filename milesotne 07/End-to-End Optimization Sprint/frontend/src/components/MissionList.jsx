@@ -1,8 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from "react";
 import MissionCard from './MissionCard';
+
+const CARD_STYLE = {
+  marginBottom: "0",
+};
 
 const MissionList = ({ missions, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
+  const [visibleCount, setVisibleCount] = useState(12);
 
   const getFilteredMissions = () => {
     console.log('--- Expensive filtering running ---');
@@ -17,7 +22,11 @@ const MissionList = ({ missions, onDelete }) => {
       .sort((a, b) => new Date(b.launchDate) - new Date(a.launchDate));
   };
 
-  const filteredMissions = getFilteredMissions();
+  // Caches computational work until either data updates or user parameters change
+  const filteredMissions = useMemo(
+    () => getFilteredMissions(),
+    [missions, searchTerm]
+  );
 
   return (
     <div className="list-wrapper">
@@ -47,15 +56,28 @@ const MissionList = ({ missions, onDelete }) => {
       </div>
 
       <div className="mission-grid">
-        {filteredMissions.map(mission => (
-          <MissionCard 
-            key={mission.id} 
-            mission={mission} 
-            onDelete={onDelete}
-            style={{ marginBottom: '0' }} 
-          />
-        ))}
+        {filteredMissions
+          .slice(0, visibleCount)
+          .map(mission => (
+            <MissionCard 
+              key={mission.id} 
+              mission={mission} 
+              onDelete={onDelete}
+              style={CARD_STYLE} 
+            />
+          ))}
       </div>
+
+      {visibleCount < filteredMissions.length && (
+        <button
+          className="btn btn-secondary"
+          onClick={() =>
+            setVisibleCount((v) => v + 12)
+          }
+        >
+          Load More
+        </button>
+      )}
     </div>
   );
 };
