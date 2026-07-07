@@ -9,7 +9,12 @@ const PORT = 5001;
 
 // BROKEN PART 5: CSRF vulnerability (no protection)
 // CORS set to * (accepts requests from any origin)
-app.use(cors({ origin: '*' }));
+app.use(
+    cors({
+        origin: "http://localhost:5173",
+        credentials: true,
+    })
+);
 app.use(express.json());
 
 app.use('/api/auth', authRoutes);
