@@ -59,7 +59,7 @@ const Dashboard = () => {
           <div className="bg-white p-10 rounded-3xl shadow-xl shadow-slate-100 border border-slate-50 hover:border-slate-200 transition-all group">
             <p className="text-slate-500 font-bold text-sm uppercase tracking-widest italic mb-2">Points</p>
             <div className="flex items-center justify-between">
-              <h4 className="text-5xl font-black text-slate-900 text-amber-500">1.2k</h4>
+              {/* <h4 className="text-5xl font-black text-slate-900 text-amber-500">1.2k</h4> */}
               <div className="w-14 h-14 bg-amber-50 rounded-2xl flex items-center justify-center p-3 text-amber-400 group-hover:text-amber-700 group-hover:bg-amber-100 transition-all duration-300">
                  <Box size={32} />
               </div>

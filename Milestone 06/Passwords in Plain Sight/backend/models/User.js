@@ -11,7 +11,8 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: true,
-      // No minlength, no select: false, no pre-save hook
+      minlength: 8, // Enforces basic password length criteria
+      select: false, // Prevents password from leaking in default queries
     },
   },
   { timestamps: true }
