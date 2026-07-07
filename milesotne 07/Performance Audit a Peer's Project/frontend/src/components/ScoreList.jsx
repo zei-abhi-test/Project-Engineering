@@ -1,14 +1,26 @@
-import React, { useState } from 'react';
+import React, {
+    useState,
+    useMemo
+} from "react";
 import ScoreCard from './ScoreCard';
 import { Search } from 'lucide-react';
 
 const ScoreList = ({ scores, onDelete }) => {
   const [searchTerm, setSearchTerm] = useState('');
 
-  // Performance flaw: No useMemo
-  const filteredScores = scores.filter(s => 
-    s.game.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.player.toLowerCase().includes(searchTerm.toLowerCase())
+  // Caches filtering work to avoid re-running string manipulation on unrelated component renders
+  const filteredScores = useMemo(
+    () =>
+        scores.filter(
+            s =>
+                s.game
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase()) ||
+                s.player
+                    .toLowerCase()
+                    .includes(searchTerm.toLowerCase())
+        ),
+    [scores, searchTerm]
   );
 
   return (

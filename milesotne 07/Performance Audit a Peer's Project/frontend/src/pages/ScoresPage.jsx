@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+    useState,
+    useEffect,
+    useCallback
+} from "react";
 import axios from 'axios';
 import ScoreList from '../components/ScoreList';
 import { Trophy, Gamepad2, Info } from 'lucide-react';
@@ -8,23 +12,39 @@ const ScoresPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchScores = async () => {
       setLoading(true);
       try {
-        const res = await axios.get('/api/scores');
-        setScores(res.data);
+        const res = await axios.get(
+            "/api/scores?page=1&limit=20",
+            {
+                signal: controller.signal
+            }
+        );
+        setScores(res.data.scores);
       } catch (err) {
-        console.error(err);
+        if (axios.isCancel(err)) {
+          console.log('Score fetch aborted successfully');
+        } else {
+          console.error(err);
+        }
       } finally {
-        setLoading(false);
+        // Only flip loading flag if the component instance remains alive
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
       }
     };
     fetchScores();
+
+    return () => controller.abort();
   }, []);
 
-  const handleDelete = (id) => {
+  const handleDelete = useCallback((id)=>{
     setScores(prev => prev.filter(s => s.id !== id));
-  };
+  }, [setScores]);
 
   return (
     <div className="app-container">

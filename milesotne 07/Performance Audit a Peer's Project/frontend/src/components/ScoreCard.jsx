@@ -55,4 +55,4 @@ const ScoreCard = ({ score, onDelete }) => {
   );
 };
 
-export default ScoreCard;
+export default React.memo(ScoreCard);

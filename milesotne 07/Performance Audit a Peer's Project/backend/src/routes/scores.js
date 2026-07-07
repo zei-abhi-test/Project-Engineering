@@ -5,17 +5,44 @@ const prisma = new PrismaClient();
 
 // Issue B1: No Pagination
 // Issue B2: Over-fetching (includes strategyNote)
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
-    // Fetches ALL scores and ALL fields (including heavy strategyNote)
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+
+    const skip = (page - 1) * limit;
+
+    const total = await prisma.score.count();
+
     const scores = await prisma.score.findMany({
-      orderBy: { date: 'desc' }
+      skip,
+      take: limit,
+      orderBy: {
+        date: "desc",
+      },
+      select: {
+        id: true,
+        game: true,
+        player: true,
+        score: true,
+        date: true,
+      },
     });
-    
-    res.json(scores);
-  } catch (error) {
-    console.error('Error fetching scores:', error);
-    res.status(500).json({ error: 'Failed to fetch scores' });
+
+    res.json({
+      currentPage: page,
+      total,
+      totalPages: Math.ceil(total / limit),
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+      scores,
+    });
+  } catch (err) {
+    console.error(err);
+
+    res.status(500).json({
+      error: "Failed to fetch scores",
+    });
   }
 });
 
