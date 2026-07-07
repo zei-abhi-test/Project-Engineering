@@ -39,3 +39,4 @@ Managers approve or reject them. Admins manage the system.
 5. Build the middleware and restrictions to match the access model
 
 **Output Requirement**: Complete file contents for every file. App must start, seed users, and run without errors. All endpoints must function. The RBAC gaps are the absence of middleware — not broken code.
+
