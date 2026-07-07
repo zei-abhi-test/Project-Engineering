@@ -1,20 +1,73 @@
 import express from 'express';
 import cors from 'cors';
 import { prisma } from './prisma.config';
-
+import compression from "compression";
 const app = express();
 const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
+app.use(compression());
 
 // BROKEN ENDPOINT: Multiple performance killers
-app.get('/api/orders', async (req, res) => {
+app.get("/api/orders", async (req, res) => {
   try {
-    // PROBLEM 1: No Pagination (Fetching all 500+ records at once)
-    const baseOrders = await prisma.order.findMany({
-      orderBy: { createdAt: 'desc' }
+    const page = Number(req.query.page) || 1;
+    const limit = Number(req.query.limit) || 20;
+
+    const skip = (page - 1) * limit;
+
+    const total = await prisma.order.count();
+
+    const orders = await prisma.order.findMany({
+      skip,
+      take: limit,
+      orderBy: {
+        createdAt: "desc",
+      },
+      select: {
+        id: true,
+        total: true,
+        status: true,
+        createdAt: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        items: {
+          select: {
+            quantity: true,
+            price: true,
+            product: {
+              select: {
+                id: true,
+                name: true,
+                price: true,
+              },
+            },
+          },
+        },
+      },
     });
+
+    res.json({
+      currentPage: page,
+      totalPages: Math.ceil(total / limit),
+      total,
+      hasNextPage: page * limit < total,
+      hasPrevPage: page > 1,
+      orders,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Failed to fetch orders",
+    });
+  }
+});
 
     // PROBLEM 2: N+1 Query Issue (Fetching related data in a loop instead of a join)
     // This will fire 500+ separate database queries
