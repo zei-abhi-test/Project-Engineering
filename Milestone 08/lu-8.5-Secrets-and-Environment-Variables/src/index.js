@@ -10,6 +10,25 @@ const authRoutes = require("./routes/auth");
 const notesRoutes = require("./routes/notes");
 const healthRoutes = require("./routes/health");
 
+function validateEnv() {
+  const required = ["DATABASE_URL", "JWT_SECRET"];
+
+  const missing = required.filter(
+    (key) => !process.env[key]
+  );
+
+  if (missing.length) {
+    console.error(
+      "Missing required environment variables:",
+      missing.join(", ")
+    );
+
+    process.exit(1);
+  }
+}
+
+validateEnv();
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 

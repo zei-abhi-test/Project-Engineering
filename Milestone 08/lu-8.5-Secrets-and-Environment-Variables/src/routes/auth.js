@@ -5,7 +5,7 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const prisma = require("../config/db");
-const { JWT_SECRET } = require("../middleware/auth");
+const JWT_SECRET = process.env.JWT_SECRET;
 
 const router = express.Router();
 
