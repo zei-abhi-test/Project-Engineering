@@ -8,7 +8,18 @@ const auth = (req, res, next) => {
 
   try {
     const decoded = verifyToken(token.split(' ')[1]);
-    req.user = decoded; // BROKEN PART 2: req.user.role will be undefined
+    const rawToken = token.split(" ")[1];
+
+if (blacklist.includes(rawToken)) {
+    return res.status(401).json({
+        error: "Token has been invalidated",
+    });
+}
+
+const decoded = verifyToken(rawToken);
+
+req.user = decoded;
+// BROKEN PART 2: req.user.role will be undefined
     
     // BROKEN PART 6: No blacklist check here
     next();

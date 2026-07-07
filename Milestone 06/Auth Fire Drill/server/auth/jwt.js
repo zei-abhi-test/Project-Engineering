@@ -2,11 +2,17 @@
 const jwt = require('jsonwebtoken');
 
 // BROKEN PART 1: Hardcoded secret & no expiry
-const SECRET = 'fragments-secret-key';
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is missing");
+}
+
+const SECRET = process.env.JWT_SECRET;
 
 const signToken = (payload) => {
   // BROKEN PART 1: expiresIn not set
-  return jwt.sign(payload, SECRET);
+  return jwt.sign(payload, SECRET, {
+  expiresIn: "1h",
+});
 };
 
 const verifyToken = (token) => {

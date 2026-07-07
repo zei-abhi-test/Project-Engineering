@@ -1,4 +1,3 @@
-
 import { createContext, useContext, useState, useEffect } from 'react';
 
 const AuthContext = createContext();
@@ -6,25 +5,28 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [token, setToken] = useState(localStorage.getItem('token'));
-  const [role, setRole] = useState(localStorage.getItem('role')); // BROKEN PART 3: Storing role in localStorage
+  const [role, setRole] = useState(null); 
 
   useEffect(() => {
-    if(token && role) {
-        setUser({ token, role });
+    // If we have a token but no user object yet, you would typically 
+    // fetch the profile data here. For now, this syncs the state.
+    if (token && user) {
+        setRole(user.role);
+    } else if (!token) {
+        setUser(null);
+        setRole(null);
     }
-  }, [token, role]);
+  }, [token, user]);
 
   const login = (data) => {
     localStorage.setItem('token', data.token);
-    localStorage.setItem('role', data.user.role); // BROKEN PART 3: Storing role in localStorage
     setToken(data.token);
-    setRole(data.user.role);
     setUser(data.user);
+    setRole(data.user.role);
   };
 
   const logout = () => {
     localStorage.removeItem('token');
-    localStorage.removeItem('role');
     setToken(null);
     setRole(null);
     setUser(null);

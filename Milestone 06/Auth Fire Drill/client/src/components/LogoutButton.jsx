@@ -8,8 +8,9 @@ const LogoutButton = () => {
 
     const handleLogout = () => {
         // BROKEN PART 6: Only frontend logic, no server-side invalidation
+        await api.post("/auth/logout");
         logout();
-        navigate('/login');
+        navigate("/login");
     };
 
     return (
