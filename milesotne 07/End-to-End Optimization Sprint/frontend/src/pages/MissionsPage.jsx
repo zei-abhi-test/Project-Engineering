@@ -1,4 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+} from "react";
 import axios from 'axios';
 import MissionList from '../components/MissionList';
 
@@ -7,23 +11,37 @@ const MissionsPage = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchMissions = async () => {
       try {
-        const response = await axios.get('http://localhost:3001/api/missions');
-        setMissions(response.data);
+        const response = await axios.get(
+          "http://localhost:3001/api/missions?page=1&limit=12",
+          {
+            signal: controller.signal,
+          }
+        );
+        // Backend now returns an object containing the missions array
+        setMissions(response.data.missions || response.data);
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching missions:', error);
-        setLoading(false);
+        if (axios.isCancel(error)) {
+          console.log('Fetch aborted successfully');
+        } else {
+          console.error('Error fetching missions:', error);
+          setLoading(false);
+        }
       }
     };
 
     fetchMissions();
-  }); 
 
-  const handleDelete = (id) => {
-    setMissions(missions.filter(m => m.id !== id));
-  };
+    return () => controller.abort();
+  }, []); 
+
+  const handleDelete = useCallback((id) => {
+    setMissions((prevMissions) => prevMissions.filter(m => m.id !== id));
+  }, [setMissions]);
 
   return (
     <div className="container">
