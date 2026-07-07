@@ -19,7 +19,11 @@ const Dashboard = () => {
       setPolls(data.polls);
       setLastUpdated(new Date());
     } catch (err) {
-      console.error('Failed to fetch poll', err);
+      console.error("Failed to fetch poll", err);
+
+if (err.response?.status === 401) {
+  clearInterval(intervalRef.current);
+}
       // INTENTIONAL: NO REDIRECTION ON FAIL DURING POLLING
     } finally {
       if (showLoading) setLoading(false);
@@ -44,7 +48,14 @@ const Dashboard = () => {
       await fetchPoll();
     } catch (err) {
       // INTENTIONAL MISHANDLING: JUST SHOW ALERT
-      alert(err.response?.data?.message || 'Vote failed. Token might be expired.');
+      if (err.response?.status === 401) {
+  clearInterval(intervalRef.current);
+}
+
+alert(
+  err.response?.data?.message ||
+  "Session expired. Please login again."
+);
       // The user remains on the dashboard, and the polling continues even if 401 or 500
     } finally {
       setVoting(null);
