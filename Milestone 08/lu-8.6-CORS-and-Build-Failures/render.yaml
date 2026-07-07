@@ -8,13 +8,12 @@ services:
     region: oregon
     plan: free
     # ================================================================
-    # BUG #3: Build command is missing `npx prisma generate`.
-    # Without it, the Prisma Client is never generated in production.
-    # The server will start fine, the health check will pass, but the
-    # FIRST database query will crash with:
-    #   "PrismaClientInitializationError: Prisma Client has not been generated yet"
+    # BUG #3 FIXED: Automated Database Client & Schema Sync 
+    # Appending Client Generation and Migration Deployment processes
+    # into the deployment pipeline ensures that database schemas stay
+    # locked and ready prior to application execution.
     # ================================================================
-    buildCommand: npm install
+    buildCommand: npm install && npx prisma generate && npx prisma migrate deploy
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -26,9 +25,12 @@ services:
       - key: JWT_SECRET
         generateValue: true
       # ================================================================
-      # BUG #2 (partial): CORS_ORIGIN is missing here!
-      # The backend needs to know the frontend URL for CORS.
+      # BUG #2 FIXED: Explicit CORS handshake configuration
+      # Configures the backend to accept secure credential pipelines 
+      # from your deployed static web asset domain interface.
       # ================================================================
+      - key: CORS_ORIGIN
+        value: https://your-frontend.onrender.com
 
   # ---- Frontend (Static Site) ----
   - type: web
@@ -43,8 +45,9 @@ services:
       - key: NODE_ENV
         value: production
       # ================================================================
-      # BUG #2: VITE_API_URL is NOT set here!
-      # The Vite build needs this at BUILD TIME to bake the API URL
-      # into the frontend bundle. Without it, the app will try to
-      # call "undefined/api/..." which obviously fails.
+      # BUG #2 FIXED: Build-time environment compilation
+      # Bakes the explicit backend API target into the static artifact
+      # production bundle during compilation execution.
       # ================================================================
+      - key: VITE_API_URL
+        value: https://your-backend.onrender.com/api
