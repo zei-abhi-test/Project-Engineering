@@ -15,7 +15,11 @@ const healthRoutes = require("./routes/health");
 // (Lesson from 8.5 — always validate before booting)
 // ============================================================
 function validateEnv() {
-  const required = ["DATABASE_URL", "JWT_SECRET"];
+  const required = [
+    "DATABASE_URL",
+    "JWT_SECRET",
+    "CORS_ORIGIN",
+  ];
   const missing = required.filter((key) => !process.env[key]);
 
   if (missing.length > 0) {
@@ -33,20 +37,17 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // ============================================================
-// BUG #1: CORS is configured with a wildcard origin ("*").
+// BUG #1 FIXED: CORS wildcard origin restriction resolved
 //
-// This SEEMS like it should allow everything, but it actually
-// BREAKS when the frontend sends credentials (cookies, auth
-// headers). Browsers reject wildcard origins for credentialed
-// requests, returning:
-//   "CORS policy: No 'Access-Control-Allow-Origin' header"
-//
-// The fix: use process.env.CORS_ORIGIN to allow only the
-// specific deployed frontend URL.
+// Replaced wildcard ("*") configuration with the specific 
+// verified frontend deployment context. Adding credentials: true
+// allows browser engines to safely bridge authorization headers 
+// and cookie contexts without throwing CORS policy rejections.
 // ============================================================
 app.use(
   cors({
-    origin: "*",
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
   })
