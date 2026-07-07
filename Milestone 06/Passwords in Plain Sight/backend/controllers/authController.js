@@ -1,21 +1,23 @@
 import User from '../models/User.js'
 import jwt from 'jsonwebtoken'
+import bcrypt from 'bcryptjs'
 
 // @desc    Register user
 // @route   POST /api/auth/signup
 export const signup = async (req, res) => {
   try {
     const { email, password } = req.body
-
+    
     const existingUser = await User.findOne({ email })
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' })
     }
 
-    // Password stored directly — no hashing
+    const hashedPassword = await bcrypt.hash(password, 10)
+
     const user = await User.create({
       email,
-      password, // plain text stored here
+      password: hashedPassword,
     })
 
     const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
@@ -39,8 +41,9 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' })
     }
 
-    // Direct string comparison — unsafe
-    if (user.password !== password) {
+    // Securely compare the provided password with the hashed password in the DB
+    const isMatch = await bcrypt.compare(password, user.password)
+    if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' })
     }
 
