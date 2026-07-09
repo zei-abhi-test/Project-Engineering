@@ -1,23 +1,23 @@
-# LearnLens — Prompt Quality Comparison
+# LearnLens – Prompt Quality Comparison
 
----
+## Task A – Notes Reviewer
 
-# Task A — Notes Reviewer
-
-## Missing Components in Original
+### Missing Components in Original
 
 Missing:
-- Persona/System instruction
+- System Instruction (no persona or expertise defined)
 - Explicit context delimiters
-- Clear evaluation task
-- JSON output format
-- Behavioral constraints
+- Structured evaluation task
+- Required output format
+- Constraints
 
-The original prompt simply asks for feedback, allowing the model to choose any response format.
+Present:
+- Context (partial)
+- Task (very vague)
 
 ---
 
-## Original Prompt
+### Original Prompt
 
 ```text
 give feedback on this note: ${content}
@@ -25,19 +25,19 @@ give feedback on this note: ${content}
 
 ---
 
-## Rewritten Prompt
+### Rewritten Prompt
 
-Uses:
+The rewritten prompt includes:
 
-- Persona (Biology educator)
+- System persona (Biology educator)
 - Delimited context
-- Clear evaluation task
+- Explicit evaluation criteria
 - Required JSON schema
-- Constraints (JSON only, no hallucinations, no markdown)
+- Output constraints
 
 ---
 
-## Test Input Used
+### Test Input
 
 ```text
 Mitosis is when cells divide. There are 4 phases. Prophase is when chromosomes condense. Metaphase the chromosomes line up. Anaphase they split. Telophase new cells form. DNA replicates before division starts. This is important for growth and repair.
@@ -45,41 +45,59 @@ Mitosis is when cells divide. There are 4 phases. Prophase is when chromosomes c
 
 ---
 
-## Bad Prompt Output
+### Bad Prompt Output
 
-(Paste exactly what you posted.)
-
----
-
-## Good Prompt Output
-
-(Paste after running `--version=good`.)
+The model returned free-form prose with headings, suggestions, and a rewritten paragraph. Although helpful, the output was inconsistent and unsuitable for direct programmatic use.
 
 ---
 
-## Improvement
+### Good Prompt Output
 
-Adding an explicit JSON format and behavioral constraints transformed the response from free-form study advice into a structured object that matches the frontend requirements.
+```json
+{
+  "clarity": {
+    "score": 7,
+    "feedback": "Simple and easy to follow, but the phrasing is very brief and some sentences are fragmentary."
+  },
+  "completeness": {
+    "score": 5,
+    "feedback": "Covers the main mitosis phases and mentions DNA replication and function, but leaves out key details such as cytokinesis and what happens in each phase."
+  },
+  "accuracy": {
+    "score": 6,
+    "feedback": "Mostly correct, but telophase does not directly mean new cells form; cell division is completed by cytokinesis, which is not mentioned."
+  },
+  "overallScore": 6,
+  "topPriority": "Add missing key steps and clarify that cytokinesis completes cell division."
+}
+```
 
 ---
 
-# Task B — Placement Summariser
+### Improvement
 
-## Missing Components in Original
+The rewritten prompt enforced a JSON structure, making the response predictable, machine-readable, and suitable for frontend rendering without additional parsing.
+
+---
+
+# Task B – Placement Summariser
+
+### Missing Components in Original
 
 Missing:
-
-- Persona
-- JSON format
-- Output constraints
-- Privacy instruction
+- System instruction
 - Structured extraction task
+- Required JSON format
+- Privacy constraints
+- Output restrictions
 
-The prompt only requests a summary, so the model returns normal prose.
+Present:
+- Context
+- Basic summarization request
 
 ---
 
-## Original Prompt
+### Original Prompt
 
 ```text
 summarize this interview experience: ${text}
@@ -87,19 +105,19 @@ summarize this interview experience: ${text}
 
 ---
 
-## Rewritten Prompt
+### Rewritten Prompt
 
-Uses:
+The rewritten prompt adds:
 
-- Persona
-- Context delimiters
-- Extraction task
-- Required JSON schema
-- Privacy constraints
+- Interview summariser persona
+- Privacy requirements
+- Structured extraction task
+- JSON schema
+- Output constraints
 
 ---
 
-## Test Input Used
+### Test Input
 
 ```text
 I interviewed at Google for a SWE intern role in March...
@@ -107,41 +125,53 @@ I interviewed at Google for a SWE intern role in March...
 
 ---
 
-## Bad Prompt Output
+### Bad Prompt Output
 
-(Paste exactly.)
-
----
-
-## Good Prompt Output
-
-(Paste after running.)
+The model produced a readable paragraph summarizing the interview experience, but it contained no structured fields and could not be consumed directly by the application.
 
 ---
 
-## Improvement
+### Good Prompt Output
 
-The rewritten prompt consistently returns structured JSON with fixed fields instead of an unstructured paragraph.
+```json
+{
+  "company": "Google",
+  "role": "SWE intern",
+  "difficulty": 3,
+  "keyTopics": [
+    "arrays",
+    "dynamic programming"
+  ],
+  "outcome": "Offer received but turned down due to relocation"
+}
+```
 
 ---
 
-# Task C — Error Analyst
+### Improvement
 
-## Missing Components in Original
+The rewritten prompt consistently extracts only the required information into a predictable JSON object, making the output reliable for downstream processing.
+
+---
+
+# Task C – Error Analyst
+
+### Missing Components in Original
 
 Missing:
+- System instruction
+- Structured debugging task
+- JSON output format
+- Severity constraints
+- Anti-hallucination rules
 
-- Persona
-- Structured JSON format
-- Severity constraint
-- Root cause extraction task
-- Anti-hallucination constraints
-
-The prompt only asks why there is a bug, resulting in conversational troubleshooting.
+Present:
+- Error message
+- Basic debugging request
 
 ---
 
-## Original Prompt
+### Original Prompt
 
 ```text
 why is there a bug: ${error_message}
@@ -149,19 +179,19 @@ why is there a bug: ${error_message}
 
 ---
 
-## Rewritten Prompt
+### Rewritten Prompt
 
-Uses:
+The rewritten prompt introduces:
 
 - Senior debugging persona
-- Delimited stack trace
-- Root-cause analysis task
-- Required JSON schema
+- Clear analysis task
+- JSON schema
+- Controlled severity values
 - Strict output constraints
 
 ---
 
-## Test Input Used
+### Test Input
 
 ```text
 TypeError: Cannot read properties of undefined (reading 'map')
@@ -169,18 +199,44 @@ TypeError: Cannot read properties of undefined (reading 'map')
 
 ---
 
-## Bad Prompt Output
+### Bad Prompt Output
 
-(Paste exactly.)
-
----
-
-## Good Prompt Output
-
-(Paste after running.)
+The model produced conversational troubleshooting advice with multiple possible causes and suggested fixes. While useful to a developer, the output lacked structure and consistency.
 
 ---
 
-## Improvement
+### Good Prompt Output
 
-The rewritten prompt produces structured diagnostics with predictable fields, making the output suitable for automated dashboard consumption.
+```json
+{
+  "rootCause": "UserList.render is calling .map() on an undefined value, so the list data expected by the component is not initialized or not being passed in.",
+  "affectedComponent": "UserList.jsx",
+  "severity": "medium",
+  "recommendedFix": "Ensure the value being mapped is always an array before render, by initializing it to an empty array or guarding with a conditional check before calling .map().",
+  "codeSnippet": "UserList.render (/app/components/UserList.jsx:34:22)"
+}
+```
+
+---
+
+### Improvement
+
+The rewritten prompt transformed conversational debugging advice into structured diagnostics that can be displayed directly in dashboards or consumed by automated systems.
+
+---
+
+# Overall Conclusion
+
+Applying the five-component prompt engineering framework significantly improved output quality across all three tasks.
+
+The original prompts produced inconsistent free-form responses that varied in format and were difficult to consume programmatically.
+
+The rewritten prompts introduced:
+
+- Clear system instructions
+- Well-defined context
+- Explicit tasks
+- Fixed JSON output schemas
+- Strict constraints
+
+As a result, every response became predictable, structured, and suitable for direct integration into the LearnLens application without additional parsing or manual interpretation.
