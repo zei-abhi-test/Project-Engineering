@@ -22,7 +22,7 @@ npm install
 ### 3. Environment Variable
 Create a `.env` file in the root directory and add your OpenAI API key:
 ```env
-VITE_OPENAI_API_KEY=your_openai_api_key_here
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
 ### 4. Run the Application
@@ -32,3 +32,11 @@ npm run dev
 ```
 
 The app should now be running on [http://localhost:5173](http://localhost:5173).
+
+## Live Deployment
+
+Frontend:
+https://your-frontend-url
+
+Backend:
+https://your-backend-url

@@ -6,8 +6,6 @@ function App() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
-
   const handleSummarize = async () => {
     if (!notes.trim()) return;
     
@@ -16,34 +14,23 @@ function App() {
     setSummary('');
 
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
+      const response = await fetch("/api/summarize", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: 'gpt-4o-mini',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a concise study note summariser. Return a bullet-point summary of the key concepts.',
-            },
-            {
-              role: 'user',
-              content: notes,
-            },
-          ],
+          notes,
         }),
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error?.message || 'Failed to summarize notes');
+        throw new Error(data.error);
       }
 
-      const data = await response.json();
-      setSummary(data.choices[0].message.content);
+      setSummary(data.data.summary);
     } catch (err) {
       setError(err.message);
     } finally {
