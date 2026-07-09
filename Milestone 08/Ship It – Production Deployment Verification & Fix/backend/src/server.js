@@ -10,10 +10,12 @@ app.use(express.json());
 
 // Bug: CORS only allows http://localhost:5173
 // This will block the deployed Vercel frontend from making requests!
-app.use(cors({
-  origin: 'http://localhost:5173',
-  credentials: true
-}));
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN,
+    credentials: true,
+  })
+);
 
 app.use('/health', healthRoutes);
 app.use('/api/items', itemRoutes);
